@@ -10,6 +10,7 @@ namespace WebReaper.Core.Loaders.Concrete;
 
 public class PuppeteerPageLoader : BrowserPageLoader, IBrowserPageLoader
 {
+    private readonly BrowserTag _browserTag = BrowserTag.Stable;
     private readonly ICookiesStorage _cookiesStorage;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -29,11 +30,13 @@ public class PuppeteerPageLoader : BrowserPageLoader, IBrowserPageLoader
             Path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
         });
 
+        PuppeteerSharp.BrowserData.InstalledBrowser downloadedBrowser = null;
+
         await _semaphore.WaitAsync();
         try
         {
             Logger.LogInformation("{class}.{method}: Downloading browser...", nameof(PuppeteerPageLoader), nameof(Load));
-            await browserFetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
+            downloadedBrowser = await browserFetcher.DownloadAsync(_browserTag);
             Logger.LogInformation("{class}.{method}: Browser is downloaded", nameof(PuppeteerPageLoader), nameof(Load));
         }
         finally
@@ -45,7 +48,7 @@ public class PuppeteerPageLoader : BrowserPageLoader, IBrowserPageLoader
         await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
         {
             Headless = headless,
-            ExecutablePath = browserFetcher.RevisionInfo(BrowserFetcher.DefaultChromiumRevision).ExecutablePath
+            ExecutablePath = downloadedBrowser.GetExecutablePath()
         });
 
         Logger.LogInformation("{class}.{method}: creating a new page", nameof(PuppeteerPageLoader), nameof(Load));

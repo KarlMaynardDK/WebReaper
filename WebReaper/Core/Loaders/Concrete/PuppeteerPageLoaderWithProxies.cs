@@ -13,6 +13,8 @@ namespace WebReaper.Core.Loaders.Concrete;
 
 public class PuppeteerPageLoaderWithProxies : BrowserPageLoader, IBrowserPageLoader
 {
+    private readonly BrowserTag _browserTag = BrowserTag.Stable;
+
     private readonly ICookiesStorage _cookiesStorage;
 
     private readonly IProxyProvider _proxyProvider;
@@ -34,10 +36,12 @@ public class PuppeteerPageLoaderWithProxies : BrowserPageLoader, IBrowserPageLoa
             Path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
         });
 
+        PuppeteerSharp.BrowserData.InstalledBrowser downloadedBrowser = null;
+
         await _semaphore.WaitAsync();
         try
         {
-            await browserFetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
+            downloadedBrowser = await browserFetcher.DownloadAsync(_browserTag);
         }
         finally
         {
@@ -52,7 +56,7 @@ public class PuppeteerPageLoaderWithProxies : BrowserPageLoader, IBrowserPageLoa
         await using var browser = await puppeteerExtra.LaunchAsync(new LaunchOptions
         {
             Headless = headless,
-            ExecutablePath = browserFetcher.RevisionInfo(BrowserFetcher.DefaultChromiumRevision).ExecutablePath,
+            ExecutablePath = downloadedBrowser.GetExecutablePath(), 
             Args = new[]
             {
                 "--disable-dev-shm-usage",

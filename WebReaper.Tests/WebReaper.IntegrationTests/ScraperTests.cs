@@ -9,6 +9,8 @@ namespace WebReaper.IntegrationTests
 {
     public class ScraperEngineTests
     {
+        private readonly BrowserTag _browserTag = BrowserTag.Stable;
+
         private readonly ITestOutputHelper output;
 
         public ScraperEngineTests(ITestOutputHelper output)
@@ -108,7 +110,8 @@ namespace WebReaper.IntegrationTests
                 Path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
             });
 
-            await browserFetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
+            PuppeteerSharp.BrowserData.InstalledBrowser downloadedBrowser = null;
+            downloadedBrowser = await browserFetcher.DownloadAsync(_browserTag);
 
             var result = new List<ParsedData>();
 
